@@ -38,6 +38,5 @@ logs/
 *.db
 *.sqlite3
 
-# Ignore binary images to prevent Hugging Face LFS push errors
-images/
+
 
