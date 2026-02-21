@@ -238,11 +238,15 @@ class CaptchaServer:
         self._setup_routes()
 
     def _setup_routes(self) -> None:
+        self._app.router.add_get("/", self._handle_root)
         self._app.router.add_get("/verify/{token}", self._handle_captcha_page)
         self._app.router.add_post("/verify/{token}", self._handle_captcha_submit)
         self._app.router.add_get("/health", self._handle_health)
 
     # ── Route handlers ───────────────────────────────────────────────────
+
+    async def _handle_root(self, request: web.Request) -> web.Response:
+        return web.Response(text="Bot is alive and running!", content_type="text/plain")
 
     async def _handle_health(self, request: web.Request) -> web.Response:
         return web.json_response({"status": "ok", "bot_ready": self._bot.is_ready()})
