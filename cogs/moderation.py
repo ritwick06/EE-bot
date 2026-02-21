@@ -732,19 +732,21 @@ class ModerationCog(commands.Cog, name="Moderation"):
         self, interaction: discord.Interaction, error: app_commands.AppCommandError
     ) -> None:
         if isinstance(error, app_commands.MissingPermissions):
-            await interaction.response.send_message(
-                embed=error_embed(
-                    "Permission Denied",
-                    "You don't have the required permissions for this command.",
-                ),
-                ephemeral=True,
+            embed = error_embed(
+                "Permission Denied",
+                "You don't have the required permissions for this command.",
             )
         else:
             logger.error("Moderation command error: %s", error, exc_info=True)
-            await interaction.response.send_message(
-                embed=error_embed("Error", "An unexpected error occurred."),
-                ephemeral=True,
-            )
+            embed = error_embed("Error", "An unexpected error occurred.")
+
+        try:
+            if interaction.response.is_done():
+                await interaction.followup.send(embed=embed, ephemeral=True)
+            else:
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+        except discord.HTTPException:
+            pass
 
 
 async def setup(bot: commands.Bot) -> None:
