@@ -1,3 +1,13 @@
+---
+title: Discord Moderation Bot
+emoji: 🛡️
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_file: bot.py
+pinned: false
+---
+
 # 🛡️ Discord Moderation Bot
 
 A production-grade Python Discord bot with captcha verification, blacklist-based content moderation, interactive mod tools, and full audit logging.
