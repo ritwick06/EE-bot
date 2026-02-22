@@ -195,9 +195,14 @@ class ModActionView(discord.ui.View):
         """Ensure only moderators can use these buttons."""
         assert isinstance(interaction.user, discord.Member)
         if not interaction.user.guild_permissions.manage_messages:
-            await interaction.response.send_message(
-                "❌ You don't have permission to do this.", ephemeral=True
-            )
+            if interaction.response.is_done():
+                await interaction.followup.send(
+                    "❌ You don't have permission to do this.", ephemeral=True
+                )
+            else:
+                await interaction.response.send_message(
+                    "❌ You don't have permission to do this.", ephemeral=True
+                )
             return False
         return True
 
@@ -209,12 +214,13 @@ class ModActionView(discord.ui.View):
     async def warn_button(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
+        await interaction.response.defer()
         if not await self._check_permissions(interaction):
             return
 
         member = await self._get_target_member(interaction)
         if member is None:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "❌ User not found in server.", ephemeral=True
             )
             return
@@ -255,7 +261,7 @@ class ModActionView(discord.ui.View):
             moderator=interaction.user,
             reason="Flagged message — blacklisted content",
         )
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
         self._disable_buttons()
         await interaction.message.edit(view=self)
 
@@ -267,12 +273,13 @@ class ModActionView(discord.ui.View):
     async def timeout_button(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
+        await interaction.response.defer()
         if not await self._check_permissions(interaction):
             return
 
         member = await self._get_target_member(interaction)
         if member is None:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "❌ User not found in server.", ephemeral=True
             )
             return
@@ -281,7 +288,7 @@ class ModActionView(discord.ui.View):
         try:
             await member.timeout(duration, reason="Automod — blacklisted content")
         except discord.Forbidden:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "❌ I don't have permission to timeout this user.", ephemeral=True
             )
             return
@@ -309,7 +316,7 @@ class ModActionView(discord.ui.View):
             reason="Blacklisted content",
             duration="1 hour",
         )
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
         self._disable_buttons()
         await interaction.message.edit(view=self)
 
@@ -321,12 +328,13 @@ class ModActionView(discord.ui.View):
     async def kick_button(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
+        await interaction.response.defer()
         if not await self._check_permissions(interaction):
             return
 
         member = await self._get_target_member(interaction)
         if member is None:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "❌ User not found in server.", ephemeral=True
             )
             return
@@ -342,7 +350,7 @@ class ModActionView(discord.ui.View):
         try:
             await member.kick(reason="Automod — blacklisted content")
         except discord.Forbidden:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "❌ I don't have permission to kick this user.", ephemeral=True
             )
             return
@@ -368,7 +376,7 @@ class ModActionView(discord.ui.View):
             moderator=interaction.user,
             reason="Blacklisted content",
         )
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
         self._disable_buttons()
         await interaction.message.edit(view=self)
 
@@ -380,12 +388,13 @@ class ModActionView(discord.ui.View):
     async def ban_button(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ) -> None:
+        await interaction.response.defer()
         if not await self._check_permissions(interaction):
             return
 
         member = await self._get_target_member(interaction)
         if member is None:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "❌ User not found in server.", ephemeral=True
             )
             return
@@ -405,7 +414,7 @@ class ModActionView(discord.ui.View):
                 delete_message_days=1,
             )
         except discord.Forbidden:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "❌ I don't have permission to ban this user.", ephemeral=True
             )
             return
@@ -431,7 +440,7 @@ class ModActionView(discord.ui.View):
             moderator=interaction.user,
             reason="Blacklisted content",
         )
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
         self._disable_buttons()
         await interaction.message.edit(view=self)
 
