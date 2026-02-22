@@ -41,25 +41,23 @@ class VerificationCog(commands.Cog, name="Verification"):
 
         # Upsert user record in DB
         async with get_session() as session:
-            from sqlalchemy import select
+            from sqlalchemy.dialects.postgresql import insert
 
-            result = await session.execute(
-                select(User).where(User.discord_id == member.id)
+            stmt = insert(User).values(
+                discord_id=member.id,
+                username=str(member),
+                display_name=member.display_name,
+                is_verified=False,
+                joined_at=datetime.now(timezone.utc),
             )
-            user = result.scalar_one_or_none()
-
-            if user is None:
-                user = User(
-                    discord_id=member.id,
-                    username=str(member),
-                    display_name=member.display_name,
-                    is_verified=False,
-                    joined_at=datetime.now(timezone.utc),
+            stmt = stmt.on_conflict_do_update(
+                index_elements=['discord_id'],
+                set_=dict(
+                    username=stmt.excluded.username,
+                    display_name=stmt.excluded.display_name,
                 )
-                session.add(user)
-            else:
-                user.username = str(member)
-                user.display_name = member.display_name
+            )
+            await session.execute(stmt)
 
             # Log join event
             event = UserEvent(
