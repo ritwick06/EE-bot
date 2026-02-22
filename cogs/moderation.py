@@ -53,8 +53,9 @@ class ModerationCog(commands.Cog, name="Moderation"):
         member: discord.Member,
         reason: str,
     ) -> None:
+        await interaction.response.defer()
         if member.bot:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 embed=error_embed("Error", "Cannot warn bots."), ephemeral=True
             )
             return
@@ -110,7 +111,7 @@ class ModerationCog(commands.Cog, name="Moderation"):
             moderator=interaction.user,
             reason=reason,
         )
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
         logger.info("%s warned %s: %s", interaction.user, member, reason)
 
     # ── /kick ────────────────────────────────────────────────────────────
@@ -126,8 +127,9 @@ class ModerationCog(commands.Cog, name="Moderation"):
         member: discord.Member,
         reason: Optional[str] = "No reason provided",
     ) -> None:
+        await interaction.response.defer()
         if member.bot:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 embed=error_embed("Error", "Cannot kick bots via this command."),
                 ephemeral=True,
             )
@@ -135,7 +137,7 @@ class ModerationCog(commands.Cog, name="Moderation"):
 
         # Hierarchy check
         if member.top_role >= interaction.user.top_role:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 embed=error_embed(
                     "Error",
                     "You cannot kick a member with equal or higher role.",
@@ -156,7 +158,7 @@ class ModerationCog(commands.Cog, name="Moderation"):
         try:
             await member.kick(reason=f"{interaction.user}: {reason}")
         except discord.Forbidden:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 embed=error_embed("Error", "I don't have permission to kick this user."),
                 ephemeral=True,
             )
@@ -194,7 +196,7 @@ class ModerationCog(commands.Cog, name="Moderation"):
             moderator=interaction.user,
             reason=reason,
         )
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
         logger.info("%s kicked %s: %s", interaction.user, member, reason)
 
     # ── /ban ─────────────────────────────────────────────────────────────
@@ -210,15 +212,16 @@ class ModerationCog(commands.Cog, name="Moderation"):
         member: discord.Member,
         reason: Optional[str] = "No reason provided",
     ) -> None:
+        await interaction.response.defer()
         if member.bot:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 embed=error_embed("Error", "Cannot ban bots via this command."),
                 ephemeral=True,
             )
             return
 
         if member.top_role >= interaction.user.top_role:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 embed=error_embed(
                     "Error",
                     "You cannot ban a member with equal or higher role.",
@@ -243,7 +246,7 @@ class ModerationCog(commands.Cog, name="Moderation"):
                 delete_message_days=1,
             )
         except discord.Forbidden:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 embed=error_embed("Error", "I don't have permission to ban this user."),
                 ephemeral=True,
             )
@@ -281,7 +284,7 @@ class ModerationCog(commands.Cog, name="Moderation"):
             moderator=interaction.user,
             reason=reason,
         )
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
         logger.info("%s banned %s: %s", interaction.user, member, reason)
 
     # ── /timeout ─────────────────────────────────────────────────────────
@@ -302,14 +305,15 @@ class ModerationCog(commands.Cog, name="Moderation"):
         minutes: app_commands.Range[int, 1, 40320],
         reason: Optional[str] = "No reason provided",
     ) -> None:
+        await interaction.response.defer()
         if member.bot:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 embed=error_embed("Error", "Cannot timeout bots."), ephemeral=True
             )
             return
 
         if member.top_role >= interaction.user.top_role:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 embed=error_embed(
                     "Error",
                     "You cannot timeout a member with equal or higher role.",
@@ -322,7 +326,7 @@ class ModerationCog(commands.Cog, name="Moderation"):
         try:
             await member.timeout(duration, reason=f"{interaction.user}: {reason}")
         except discord.Forbidden:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 embed=error_embed(
                     "Error", "I don't have permission to timeout this user."
                 ),
@@ -380,7 +384,7 @@ class ModerationCog(commands.Cog, name="Moderation"):
             )
             session.add(mod_event)
 
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
         logger.info(
             "%s timed out %s for %s: %s",
             interaction.user, member, dur_str, reason,
@@ -399,10 +403,11 @@ class ModerationCog(commands.Cog, name="Moderation"):
         user_id: str,
         reason: Optional[str] = "No reason provided",
     ) -> None:
+        await interaction.response.defer()
         try:
             uid = int(user_id)
         except ValueError:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 embed=error_embed("Error", "Invalid user ID."), ephemeral=True
             )
             return
@@ -411,13 +416,13 @@ class ModerationCog(commands.Cog, name="Moderation"):
             user = await self.bot.fetch_user(uid)
             await interaction.guild.unban(user, reason=f"{interaction.user}: {reason}")
         except discord.NotFound:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 embed=error_embed("Error", "This user is not banned."),
                 ephemeral=True,
             )
             return
         except discord.Forbidden:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 embed=error_embed(
                     "Error", "I don't have permission to unban this user."
                 ),
@@ -444,7 +449,7 @@ class ModerationCog(commands.Cog, name="Moderation"):
             )
             session.add(mod_event)
 
-        await interaction.response.send_message(
+        await interaction.followup.send(
             embed=success_embed("User Unbanned", f"**{user}** has been unbanned.")
         )
         logger.info("%s unbanned %s: %s", interaction.user, user, reason)

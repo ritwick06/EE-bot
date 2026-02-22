@@ -126,8 +126,9 @@ class VerificationCog(commands.Cog, name="Verification"):
         member: discord.Member,
     ) -> None:
         """Manually resend verification to a user (mod command)."""
+        await interaction.response.defer(ephemeral=True)
         if member.bot:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 "❌ Cannot verify bots.", ephemeral=True
             )
             return
@@ -139,11 +140,11 @@ class VerificationCog(commands.Cog, name="Verification"):
 
         try:
             await member.send(embed=embed, view=view)
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"✅ Verification link sent to {member.mention}.", ephemeral=True
             )
         except discord.Forbidden:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"❌ Could not DM {member.mention} — their DMs are disabled.",
                 ephemeral=True,
             )
