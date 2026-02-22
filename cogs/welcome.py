@@ -80,9 +80,10 @@ class WelcomeCog(commands.Cog, name="Welcome"):
 
         # Paste avatar
         avatar = Image.open(io.BytesIO(avatar_bytes)).convert("RGBA")
-        avatar_size = 120
-        avatar_x = (width - avatar_size) // 2
-        avatar_y = (height - avatar_size) // 2 - 20
+        avatar_size = 180
+        # The glowing circle is on the left side, approx center x=190
+        avatar_x = 190 - (avatar_size // 2)
+        avatar_y = (height - avatar_size) // 2
         
         circular_avatar = self._create_circular_avatar(avatar, avatar_size)
         banner.alpha_composite(circular_avatar, (avatar_x, avatar_y))
@@ -90,8 +91,8 @@ class WelcomeCog(commands.Cog, name="Welcome"):
         # Add text
         draw = ImageDraw.Draw(banner)
         try:
-            font_large = ImageFont.truetype(self.font_bold_path, 40)
-            font_small = ImageFont.truetype(self.font_regular_path, 24)
+            font_large = ImageFont.truetype(self.font_bold_path, 45)
+            font_small = ImageFont.truetype(self.font_regular_path, 28)
         except (IOError, OSError):
             font_large = ImageFont.load_default()
             font_small = ImageFont.load_default()
@@ -101,16 +102,19 @@ class WelcomeCog(commands.Cog, name="Welcome"):
         w_u = draw.textlength(username, font=font_large)
         w_w = draw.textlength(welcome_text, font=font_small)
 
+        # Center the text in the remaining space on the right (from x=380 to 1024)
+        text_center_x = 380 + (1024 - 380) // 2
+
         # Draw Username
         draw.text(
-            ((width - w_u) / 2, avatar_y + avatar_size + 10), 
+            (text_center_x - w_u / 2, (height // 2) - 40), 
             username, 
             font=font_large, 
             fill="white"
         )
         # Draw Welcome text
         draw.text(
-            ((width - w_w) / 2, avatar_y + avatar_size + 55), 
+            (text_center_x - w_w / 2, (height // 2) + 20), 
             welcome_text, 
             font=font_small, 
             fill="lightgray"
