@@ -395,13 +395,14 @@ class CaptchaServer:
 
     async def start(self) -> None:
         """Start the web server."""
+        import os
+        port = int(os.environ.get("PORT", _settings.captcha_server_port))
+
         self._runner = web.AppRunner(self._app)
         await self._runner.setup()
-        site = web.TCPSite(self._runner, "0.0.0.0", _settings.captcha_server_port)
+        site = web.TCPSite(self._runner, "0.0.0.0", port)
         await site.start()
-        logger.info(
-            "Captcha server running on port %d", _settings.captcha_server_port
-        )
+        logger.info("Captcha server running on port %d", port)
 
     async def stop(self) -> None:
         """Gracefully stop the web server."""

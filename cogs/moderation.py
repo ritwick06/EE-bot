@@ -537,6 +537,7 @@ class ModerationCog(commands.Cog, name="Moderation"):
         interaction: discord.Interaction,
         member: discord.Member,
     ) -> None:
+        await interaction.response.defer()
         from sqlalchemy import func, select
 
         async with get_session() as session:
@@ -576,7 +577,7 @@ class ModerationCog(commands.Cog, name="Moderation"):
             flagged_message_count=flagged_count,
             join_date=user.joined_at if user else member.joined_at,
         )
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
 
     # ── /modlog ──────────────────────────────────────────────────────────
 
@@ -594,6 +595,7 @@ class ModerationCog(commands.Cog, name="Moderation"):
         member: Optional[discord.Member] = None,
         limit: app_commands.Range[int, 1, 25] = 10,
     ) -> None:
+        await interaction.response.defer()
         from sqlalchemy import select
 
         async with get_session() as session:
@@ -605,7 +607,7 @@ class ModerationCog(commands.Cog, name="Moderation"):
             actions = result.scalars().all()
 
         if not actions:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 embed=error_embed("Mod Log", "No moderation actions found."),
                 ephemeral=True,
             )
@@ -642,7 +644,7 @@ class ModerationCog(commands.Cog, name="Moderation"):
                 inline=False,
             )
 
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
 
     # ── /stafflog ─────────────────────────────────────────────────────────
 
@@ -660,6 +662,7 @@ class ModerationCog(commands.Cog, name="Moderation"):
         moderator: Optional[discord.Member] = None,
         limit: app_commands.Range[int, 1, 25] = 15,
     ) -> None:
+        await interaction.response.defer(ephemeral=True)
         from sqlalchemy import select
 
         async with get_session() as session:
@@ -676,7 +679,7 @@ class ModerationCog(commands.Cog, name="Moderation"):
             events = result.scalars().all()
 
         if not events:
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 embed=error_embed("Staff Log", "No moderator activity found."),
                 ephemeral=True,
             )
@@ -703,7 +706,7 @@ class ModerationCog(commands.Cog, name="Moderation"):
                 inline=False,
             )
 
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.followup.send(embed=embed, ephemeral=True)
 
     # ── Helpers ──────────────────────────────────────────────────────────
 
