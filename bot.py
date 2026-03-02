@@ -58,10 +58,6 @@ class ModBot(commands.Bot):
 
     async def setup_hook(self) -> None:
         """Called when the bot is starting up (before on_ready)."""
-        # Initialize database
-        logger.info("Initializing database...")
-        await init_db()
-
         # Load cogs
         for ext in EXTENSIONS:
             try:
@@ -72,14 +68,13 @@ class ModBot(commands.Bot):
                 sys.exit(1)
 
         # Sync slash commands to the guild
-        guild = discord.Object(id=settings.guild_id)
-        self.tree.copy_global_to(guild=guild)
-        await self.tree.sync(guild=guild)
-        logger.info("Slash commands synced to guild %d", settings.guild_id)
-
-        # Start captcha web server
-        self.captcha_server = CaptchaServer(self)
-        await self.captcha_server.start()
+        try:
+            guild = discord.Object(id=settings.guild_id)
+            self.tree.copy_global_to(guild=guild)
+            await self.tree.sync(guild=guild)
+            logger.info("Slash commands synced to guild %d", settings.guild_id)
+        except Exception as e:
+            logger.warning("Failed to sync commands (could be rate-limited): %s", e)
 
     async def on_ready(self) -> None:
         """Called when the bot is fully connected and ready."""
@@ -102,27 +97,62 @@ class ModBot(commands.Bot):
         logger.error("Command error: %s", error, exc_info=True)
 
     async def close(self) -> None:
-        """Graceful shutdown: stop captcha server + DB connections."""
-        logger.info("Shutting down...")
-        if self.captcha_server:
-            await self.captcha_server.stop()
-        await close_db()
+        """Graceful shutdown: stop DB connections. Web server logic handled in main."""
+        logger.info("Shutting down bot...")
         await super().close()
-        logger.info("Shutdown complete.")
+        logger.info("Bot shutdown complete.")
+
+
+async def main_async() -> None:
+    """Async entry point — initializes core services, starts web server, then bot."""
+    # Initialize database first
+    logger.info("Initializing database...")
+    await init_db()
+
+    bot = ModBot()
+
+    # Start captcha web server BEFORE connecting to Discord to satisfy Render port binding
+    logger.info("Starting web server to bind port for Render health checks...")
+    bot.captcha_server = CaptchaServer(bot)
+    await bot.captcha_server.start()
+
+    logger.info("Web server started. Connecting to Discord...")
+    try:
+        async with bot:
+            await bot.start(settings.discord_token)
+    except discord.HTTPException as e:
+        if e.status == 429:
+            logger.critical(
+                "Discord Rate Limit (429) hit! The bot cannot login right now. "
+                "Keeping the process alive so Render doesn't restart it repeatedly. "
+                "Error details: %s", e
+            )
+            # Sleep indefinitely to keep web server alive, satisfying Render's health checks
+            while True:
+                await asyncio.sleep(3600)
+        else:
+            raise
+    except KeyboardInterrupt:
+        pass
+    finally:
+        # Cleanup
+        if bot.captcha_server:
+            await bot.captcha_server.stop()
+        await close_db()
 
 
 def main() -> None:
-    """Entry point — creates and runs the bot."""
-    bot = ModBot()
-
+    """Entry point."""
     # Handle SIGINT / SIGTERM gracefully
     if sys.platform != "win32":
         loop = asyncio.new_event_loop()
-        for sig in (signal.SIGINT, signal.SIGTERM):
-            loop.add_signal_handler(sig, lambda: asyncio.ensure_future(bot.close()))
+        asyncio.set_event_loop(loop)
+        
+        # We handle shutdown signals internally within main_async if needed,
+        # but asyncio.run automatically cancels tasks on termination.
 
     try:
-        bot.run(settings.discord_token, log_handler=None)
+        asyncio.run(main_async())
     except KeyboardInterrupt:
         logger.info("Received keyboard interrupt.")
     except Exception as e:
